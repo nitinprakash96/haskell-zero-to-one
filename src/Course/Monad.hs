@@ -69,11 +69,10 @@ instance Monad Optional where
 -- 119
 instance Monad ((->) t) where
   (=<<) ::
-    (a -> ((->) t b))
-    -> ((->) t a)
-    -> ((->) t b)
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance ((->) t)"
+    (a -> (->) t b)
+    -> (->) t a
+    -> (->) t b
+  (=<<) f g t = f (g t) t
 
 -- | Witness that all things with (=<<) and (<$>) also have (<*>).
 --
@@ -133,8 +132,7 @@ join ::
   Monad k =>
   k (k a)
   -> k a
-join =
-  error "todo: Course.Monad#join"
+join = (=<<) id
 
 -- | Implement a flipped version of @(=<<)@, however, use only
 -- @join@ and @(<$>)@.

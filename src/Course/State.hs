@@ -2,7 +2,7 @@
 {-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE RebindableSyntax    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections       #-}
 
 module Course.State where
 
@@ -12,6 +12,7 @@ import           Course.Functor
 import           Course.List
 import           Course.Monad
 import           Course.Optional
+import qualified Data.Set           as S
 
 -- $setup
 -- >>> import Test.QuickCheck.Function
@@ -37,7 +38,8 @@ exec ::
   State s a
   -> s
   -> s
-exec x = snd . runState x
+exec sa s = let (_, s') = runState sa s
+            in s'
 
 -- | Run the `State` seeded with `s` and retrieve the resulting value.
 --
@@ -46,7 +48,8 @@ eval ::
   State s a
   -> s
   -> a
-eval x = fst . runState x
+eval sa s = let (a, _) = runState sa s
+            in a
 
 -- | A `State` where the state also distributes into the produced value.
 --
@@ -74,7 +77,7 @@ instance Functor (State s) where
     (a -> b)
     -> State s a
     -> State s b
-  (<$>) f g = State (\x -> let (a, s') = runState g x in (f a, s'))
+  (<$>) f g = State (\s -> let (a, s') = runState g s in (f a, s'))
 
 -- | Implement the `Applicative` instance for `State s`.
 --
@@ -95,7 +98,7 @@ instance Applicative (State s) where
     State s (a -> b)
     -> State s a
     -> State s b
-  (<*>) a b = State (\x -> let (h, s') = runState a x
+  (<*>) a b = State (\s -> let (h, s') = runState a s
                                (i, s'') = runState b s'
                            in (h i, s''))
 
@@ -109,7 +112,11 @@ instance Applicative (State s) where
 --
 -- >>> runState ((\a -> State (\s -> (a + s, 10 + s))) =<< State (\s -> (s * 2, 4 + s))) 2
 -- (10,16)
-
+instance Monad (State s) where
+  (=<<) :: (a -> State s b) -> State s a -> State s b
+  (=<<) f g = State (\s -> let (a, s') = runState g s
+                               h = f a
+                           in runState h s')
 
 -- | Find the first element in a `List` that satisfies a given predicate.
 -- It is possible that no element is found, hence an `Optional` result.
@@ -130,7 +137,11 @@ findM ::
   (a -> f Bool)
   -> List a
   -> f (Optional a)
-findM = undefined
+findM _ Nil      = pure Empty
+findM g (a :. b) = match =<< g a
+  where
+    match True  = pure (Full a)
+    match False = findM g b
 
 -- | Find the first element in a `List` that repeats.
 -- It is possible that no element repeats, hence an `Optional` result.
@@ -139,12 +150,20 @@ findM = undefined
 --
 -- prop> \xs -> case firstRepeat xs of Empty -> let xs' = hlist xs in nub xs' == xs'; Full x -> length (filter (== x) xs) > 1
 -- prop> \xs -> case firstRepeat xs of Empty -> True; Full x -> let (l, (rx :. rs)) = span (/= x) xs in let (l2, r2) = span (/= x) rs in let l3 = hlist (l ++ (rx :. Nil) ++ l2) in nub l3 == l3
+--
+-- λ> firstRepeat (1 :. 2 :. 3 :. 4 :. Nil)
+-- Empty
+--
+-- λ> firstRepeat (1 :. 2 :. 3 :. 4 :. 4 :.  Nil)
+-- Full 4
 firstRepeat ::
   Ord a =>
   List a
   -> Optional a
-firstRepeat =
-  error "todo: Course.State#firstRepeat"
+firstRepeat xs =
+  eval (findM f xs) S.empty
+    where
+      f a = State (\s -> (S.member a s, S.insert a s))
 
 -- | Remove all duplicate elements in a `List`.
 -- /Tip:/ Use `filtering` and `State` with a @Data.Set#Set@.
@@ -156,8 +175,10 @@ distinct ::
   Ord a =>
   List a
   -> List a
-distinct =
-  error "todo: Course.State#distinct"
+ -- filtering is defined in the Applicative module
+distinct xs = eval (filtering f xs) S.empty
+  where
+    f a = State(\s -> (S.notMember a s, S.insert a s))
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.
 -- In contrast, a sad number (not a happy number) is where the sum of the square of its digits never reaches 1
@@ -180,8 +201,14 @@ distinct =
 --
 -- >>> isHappy 44
 -- True
+
+-- This is a bit confusing. I had to look it up for some reference and came across
+-- https://dev.to/diazomethan/comment/28dh . I'm gonna come back to this later.
 isHappy ::
   Integer
   -> Bool
 isHappy =
   error "todo: Course.State#isHappy"
+
+square :: Int -> Int
+square = join (*)
