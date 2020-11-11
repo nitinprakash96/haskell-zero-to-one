@@ -158,9 +158,7 @@ lift2 ::
   -> k a
   -> k b
   -> k c
-lift2 =
-  error "todo: Course.Applicative#lift2"
-
+lift2 f a b= f <$> a <*> b
 -- | Apply a ternary function in the environment.
 -- /can be written using `lift2` and `(<*>)`./
 --
@@ -381,8 +379,9 @@ filtering ::
   (a -> k Bool)
   -> List a
   -> k (List a)
-filtering =
-  error "todo: Course.Applicative#filtering"
+filtering p = foldRight(\h -> lift2(\c -> if c
+                                          then (h:.)
+                                          else id) (p h)) (pure Nil)
 
 -----------------------
 -- SUPPORT LIBRARIES --
