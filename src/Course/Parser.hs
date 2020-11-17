@@ -499,11 +499,10 @@ surnameParser ::
   Parser Chars
 -- Had to look this one up. Wonder if there's a solution more elegant than this. Don't want to use so many
 -- bind operators
-surnameParser =
-  upper >>= \x ->
-              thisMany 5 lower >>= \xs ->
-                                     list lower >>= \t ->
-                                                      valueParser (x :. xs ++ t)
+surnameParser = do u <- upper
+                   m <- thisMany 5 lower
+                   l <- list lower
+                   pure $ (u:.m) ++ l
 
 -- | Write a parser for Person.smoker.
 --
@@ -563,6 +562,7 @@ phoneBodyParser = list (digit ||| is '.' ||| is '-')
 -- True
 phoneParser ::
   Parser Chars
+-- This can be done using do notation as well.
 phoneParser =
   digit >>= \d ->
   phoneBodyParser >>= \e ->
@@ -623,8 +623,15 @@ phoneParser =
 -- Result >< Person 123 "Fred" "Clarkson" True "123-456.789"
 personParser ::
   Parser Person
-personParser =
-  error "todo: Course.Parser#personParser"
+personParser = do a <- ageParser
+                  _ <- spaces1
+                  b <- firstNameParser
+                  _ <- spaces1
+                  c <- surnameParser
+                  _ <- spaces1
+                  d <- smokerParser
+                  _ <- spaces1
+                  Person a b c d <$> phoneParser
 
 -- Make sure all the tests pass!
 
