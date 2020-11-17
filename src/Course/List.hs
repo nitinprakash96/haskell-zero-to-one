@@ -169,8 +169,8 @@ filter =
   List a
   -> List a
   -> List a
-(++) =
-  error "todo: Course.List#(++)"
+(++) Nil l = l
+(++) l1 l2 = foldRight (:.) l2 l1
 
 infixr 5 ++
 
