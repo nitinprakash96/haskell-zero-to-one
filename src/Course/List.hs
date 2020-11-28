@@ -75,8 +75,7 @@ headOr ::
   a
   -> List a
   -> a
-headOr =
-  error "todo: Course.List#headOr"
+headOr = foldRight const
 
 -- | The product of the elements of a list.
 --
@@ -91,8 +90,7 @@ headOr =
 product ::
   List Int
   -> Int
-product =
-  error "todo: Course.List#product"
+product = foldLeft (*) 1
 
 -- | Sum the elements of the list.
 --
@@ -106,8 +104,7 @@ product =
 sum ::
   List Int
   -> Int
-sum =
-  error "todo: Course.List#sum"
+sum = foldLeft (+) 0
 
 -- | Return the length of the list.
 --
@@ -118,8 +115,7 @@ sum =
 length ::
   List a
   -> Int
-length =
-  error "todo: Course.List#length"
+length = foldRight (const (+1)) 0
 
 -- | Map the given function on each element of the list.
 --
@@ -133,8 +129,7 @@ map ::
   (a -> b)
   -> List a
   -> List b
-map =
-  error "todo: Course.List#map"
+map f = foldRight (\a b -> f a :. b) Nil
 
 -- | Return elements satisfying the given predicate.
 --
@@ -150,8 +145,7 @@ filter ::
   (a -> Bool)
   -> List a
   -> List a
-filter =
-  error "todo: Course.List#filter"
+filter f = foldRight (\a acc -> if f a then a :. acc else acc) Nil
 
 -- | Append two lists to a new list.
 --
@@ -187,8 +181,7 @@ infixr 5 ++
 flatten ::
   List (List a)
   -> List a
-flatten =
-  error "todo: Course.List#flatten"
+flatten = foldLeft (++) Nil
 
 -- | Map a function then flatten to a list.
 --
@@ -204,8 +197,7 @@ flatMap ::
   (a -> List b)
   -> List a
   -> List b
-flatMap =
-  error "todo: Course.List#flatMap"
+flatMap f = flatten . map f
 
 -- | Flatten a list of lists to a list (again).
 -- HOWEVER, this time use the /flatMap/ function that you just wrote.
@@ -214,8 +206,7 @@ flatMap =
 flattenAgain ::
   List (List a)
   -> List a
-flattenAgain =
-  error "todo: Course.List#flattenAgain"
+flattenAgain = flatMap id
 
 -- | Convert a list of optional values to an optional list of values.
 --
@@ -265,8 +256,9 @@ find ::
   (a -> Bool)
   -> List a
   -> Optional a
-find =
-  error "todo: Course.List#find"
+find p a = case filter p a of
+           Nil -> Empty
+           x:._ -> Full x
 
 -- | Determine if the length of the given list is greater than 4.
 --
@@ -284,8 +276,10 @@ find =
 lengthGT4 ::
   List a
   -> Bool
-lengthGT4 =
-  error "todo: Course.List#lengthGT4"
+-- This will result in stack overflow
+-- lengthGT4 x = if length x > 3 then True else False
+lengthGT4 (_:._:._:._) = False
+lengthGT4 _ = False
 
 -- | Reverse a list.
 --
@@ -301,8 +295,8 @@ lengthGT4 =
 reverse ::
   List a
   -> List a
-reverse =
-  error "todo: Course.List#reverse"
+-- (\acc x -> x :. acc) became flip (:.)
+reverse = foldLeft (flip (:.)) Nil
 
 -- | Produce an infinite `List` that seeds with the given value at its head,
 -- then runs the given function for subsequent elements
@@ -330,8 +324,10 @@ produce f x = x :. produce f (f x)
 notReverse ::
   List a
   -> List a
-notReverse =
-  error "todo: Is it even possible?"
+-- Whoooooot? :P
+-- This is very nice question. But rather than the solution itself, the approach is what makes it really interesting.
+-- A full discussion is here https://github.com/tonymorris/fp-course/blob/73a64c3d4d0df58654a1a9a0ee9d9b11c3818911/src/Course/List.hs#L335
+notReverse = reverse
 
 ---- End of list exercises
 
