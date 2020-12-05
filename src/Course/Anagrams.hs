@@ -34,7 +34,7 @@ anagrams ::
   -> IO (List Chars)
 anagrams str file = let x = lines <$> readFile file
                         perm = permutations str
-                        in intersectBy equalIgnoringCase perm <$> x
+                    in intersectBy equalIgnoringCase perm <$> x
 
 -- Compare two strings for equality, ignoring case
 equalIgnoringCase ::
