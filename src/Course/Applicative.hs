@@ -217,16 +217,14 @@ lift4 ::
   -> k c
   -> k d
   -> k e
-lift4 =
-  error "todo: Course.Applicative#lift4"
+lift4 f a b c = (<*>) (lift3 f a b c)
 
 -- | Apply a nullary function in the environment.
 lift0 ::
   Applicative k =>
   a
   -> k a
-lift0 =
-  error "todo: Course.Applicative#lift0"
+lift0 = pure
 
 -- | Apply a unary function in the environment.
 -- /can be written using `lift0` and `(<*>)`./
@@ -244,8 +242,7 @@ lift1 ::
   (a -> b)
   -> k a
   -> k b
-lift1 =
-  error "todo: Course.Applicative#lift1"
+lift1 f xs = f <$> xs
 
 -- | Apply, discarding the value of the first argument.
 -- Pronounced, right apply.
@@ -317,8 +314,7 @@ sequence ::
   Applicative k =>
   List (k a)
   -> k (List a)
-sequence =
-  error "todo: Course.Applicative#sequence"
+sequence = foldRight (lift2 (:.)) (pure Nil)
 
 -- | Replicate an effect a given number of times.
 --
@@ -343,8 +339,7 @@ replicateA ::
   Int
   -> k a
   -> k (List a)
-replicateA =
-  error "todo: Course.Applicative#replicateA"
+replicateA n fa = sequence $ replicate n fa
 
 -- | Filter a list with a predicate that produces an effect.
 --
